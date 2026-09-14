@@ -27,6 +27,11 @@ def test_max_drawdown_hand_built_path() -> None:
     path = [0.0, 10.0, 5.0, 20.0, 3.0, 15.0]
     # peak runs 0→10→20; trough 20→3 ⇒ MDD 17
     assert max_drawdown(path) == pytest.approx(17.0)
+    # The reset mark is part of the path: a first-step loss is drawdown even
+    # when every later mark recovers above zero.
+    assert max_drawdown([0.0, -7.0, 4.0]) == pytest.approx(7.0)
+    # A recovery after the trough does not erase the peak-to-trough loss.
+    assert max_drawdown([0.0, 10.0, 3.0, 11.0]) == pytest.approx(7.0)
     assert max_drawdown([]) == 0.0
     assert max_drawdown([1.0, 2.0, 3.0]) == 0.0  # monotonic up ⇒ no drawdown
     assert max_drawdown([7.0]) == 0.0
@@ -101,6 +106,34 @@ def _env() -> OrderBookEnv:
     return OrderBookEnv(seed=3)
 
 
+class _PartialFirstLossEnv:
+    """One deterministic truncated episode for backtest metric pins."""
+
+    inventory0 = 100
+    arrival_mid = 100
+
+    def reset(self, *, seed: int | None = None):
+        del seed
+        self.inventory = self.inventory0
+        self.fills: list[tuple[int, int, int]] = []
+        self.t = 0
+        return None, {"arrival_mid": self.arrival_mid}
+
+    def mark_to_market(self) -> float:
+        return 0.0
+
+    def step(self, action: float):
+        del action
+        self.t = 1
+        self.inventory = 60
+        self.fills = [(1, 95, 40)]
+        return None, -1.0, False, True, {
+            "inventory": self.inventory,
+            "market_vwap": 100.0,
+            "pnl_ticks": -500.0,
+        }
+
+
 def test_run_backtest_rows_and_regime_shapes() -> None:
     rows = run_backtest(_env, n_episodes=3, seed=100)
     assert len(rows) == 3
@@ -122,6 +155,14 @@ def test_run_backtest_rows_and_regime_shapes() -> None:
         run_backtest("not-a-factory")  # type: ignore[arg-type]
 
 
+def test_run_backtest_partial_fill_counts_first_step_loss_from_reset() -> None:
+    rows = run_backtest(_PartialFirstLossEnv, n_episodes=1, seed=1)
+    assert rows[0]["fill_rate"] == pytest.approx(0.4)
+    assert rows[0]["completion_rate"] == pytest.approx(0.4)
+    # The path is [reset=0, first-step=-500], not just [-500].
+    assert rows[0]["mdd_ticks"] == pytest.approx(500.0)
+
+
 def test_run_backtest_custom_policy_and_summarize() -> None:
     market = lambda env: -1.0
     rows_a = run_backtest(("mkt", _env), policy=market, n_episodes=3, seed=7)
@@ -131,7 +172,8 @@ def test_run_backtest_custom_policy_and_summarize() -> None:
     summ = summarize(rows_a + rows_b)  # 6 rows, 2 (regime, policy) groups
     assert len(summ) == 1
     assert summ[0]["n"] == 6
-    assert all(k in summ[0] for k in ("is_bps", "vwap_slip_bps", "fill_rate", "steps"))
+    assert all(k in summ[0] for k in ("is_bps", "vwap_slip_bps", "fill_rate", "mdd_ticks", "steps"))
+    assert summ[0]["mdd_ticks"] == pytest.approx(sum(r["mdd_ticks"] for r in rows_a + rows_b) / 6)
 
 
 def test_run_backtest_cost_folds_into_reward_not_slippage() -> None:

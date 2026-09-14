@@ -1,6 +1,6 @@
 # Nexus-LOB — Part 2: Quant Research Layer (Plan of Record)
 
-**Last updated:** 2026-09-13 (final) · **Status:** Phases 0–2 on `main` (PRs #15, #16); **Phases 3, 4 and 5 landed on the Person B branch `hoplite/kranioi-5b44d8a8` (PR pending)** — Phase 3 (queue dynamics E5/E6 + RL fairness rework, §6 — DONE, headline re-characterized), Phase 4 (real NASDAQ ITCH tape: `fetch_itch.py` + `run_research.py`, E1–E6 on 12/30/2019 AAPL/QQQ), Phase 5 (`docs/RESEARCH.md` full report incl. negative results, `scripts/run_all.py` one-command reproduce, honest README rewrite). Research half **complete**; remaining are more tape days and Person A's GPU/hardware items. Person B work-package for Phases 2–4: `docs/work_package_b_phases_2_4.md`.
+**Last updated:** 2026-09-14 · **Current copy:** all original phases are imported into `sand29332-ops/ergdgt`; older branch/PR names below are historical. The dashboard is complete. E7 fill-rate/drawdown reporting and its full five-seed rerun are complete; expanded real-tape validation and history-fitted VWAP are the active Person B follow-ups. Person A's GPU/hardware measurements remain separate. Person B work-package for Phases 2–4: `docs/work_package_b_phases_2_4.md`.
 **Read this FIRST each session, then `CLAUDE.md`.** This is the single source of truth for the research-half roadmap. Keep updating it as work progresses (§ Running log at the bottom).
 
 ---
@@ -231,7 +231,7 @@ Exact shipped API: **`docs/work_package_b_phases_2_4.md §2.2`** (frozen). Signa
 - [x] At least one real NASDAQ ITCH tape parsed + replayed cleanly (12/30/2019 AAPL/QQQ, 0 truncated, integrity clean, Engine-vs-Stub parity exact on the pre-market prefix); `test_offline_real_tape.py` asserts it whenever `data/` is present (CI has no tape — skips).
 - [x] E1–E6 with walk-forward splits, rank IC, block-bootstrap CIs on a real day (`docs/results/real_tape_12302019.md`); negative results: `spread_bps` has no IC anywhere, microprice is not better than L1 imbalance, the per-event order-level OFI is weaker than the L2 approximation at h=1 (it only wins as a rolling flow at h ≥ 10), and the synthetic vignette stays null.
 - [x] Execution eval: per-regime, ≥5 seeds, CI-reported, symmetric information, fair baselines, fees+queue on; headline **re-characterized** (`docs/results/rl_fairness.md`).
-- [x] Cost/queue/impact model present (Phase 2 `execution/`); IS reported vs **market** VWAP with completion in the fairness study (`docs/results/rl_fairness.md`: `PPO slip vs market VWAP`, `PPO completion`); fill % and MDD are available via `execution.metrics` / `backtest.summarize` but are not in the committed E7 table.
+- [x] Cost/queue/impact model present (Phase 2 `execution/`); IS reported vs **market** VWAP with completion, fill rate, and gross reset-inclusive MDD in the fairness study. The 2026-09-14 full rerun includes operational-metric CIs for PPO and all baselines; `backtest.summarize` retains MDD.
 - [ ] Zero-alloc + throughput/latency measured on a documented Linux box (compiler, flags, CPU, ≥30 runs, CI/IQR).
 - [ ] CUDA risk measured (or clearly parked with the exact blocker).
 - [x] `docs/RESEARCH.md` exists: hypotheses, methods, tables, and a "what we tried that failed" section (§8, seven items).
@@ -265,3 +265,5 @@ Exact shipped API: **`docs/work_package_b_phases_2_4.md §2.2`** (frozen). Signa
   - **`scripts/run_all.py`** — one-command reproduce (`tests → vignette → fetch → research → fairness`), `--skip`, `--quick` (writes to gitignored `docs/results/quick/`).
   - README/PROGRESS/CLAUDE/progress_b rewritten to the measured numbers; `docs/work_package_b_phases_2_4.md` closed out.
   - **Remaining (research half):** more tape days / symbols (`fetch_itch.py --day …`, ≈ 14 min each); the E7 table could add fill % / MDD from `execution.backtest.summarize`. Person A: GPU + hardware numbers.
+
+- **2026-09-14 — E7 operational reporting complete in the imported copy.** Added same-rollout fill-rate and gross MTM drawdown CIs, reset-mark coverage, backtest summary propagation, and configuration-checked policy caching. Full five-seed/600-iteration rerun completed in 1,053 s; 39 focused tests and generated-report schema/CI checks pass. No consistent high-vol edge; liquidity-shock significance is 5/5 `novol`, 4/5 `volsym`. Expanded real tapes and history-fitted VWAP remain active.

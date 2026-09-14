@@ -52,10 +52,16 @@ def run_backtest(
     ``is_bps`` uses the arrival mid (observable at t); ``vwap_slip_bps`` is vs
     the **market** VWAP the env tracks from exogenous flow (not self-execution).
     Both slippage columns are **pre-cost**: fee/rebate/impact money terms are
-    folded into the env's OWN cash math (the ``reward`` column) via the env
-    cost knobs, not into slippage — so every strategy is compared on the same
-    timing-skill metric, and cost competitiveness is read from ``reward`` when
-    the env is constructed with costs on.
+    folded into the env's reward calculation via the cost knobs, not into
+    slippage — so every strategy is compared on the same timing-skill metric,
+    and cost competitiveness is read from ``reward`` when the env is
+    constructed with costs on.
+
+    ``mdd_ticks`` retains the historical field name but is measured in
+    price-tick × share units: maximum peak-to-trough **gross**
+    mark-to-market PnL. The reset PnL is the first path point, so a first-step
+    loss contributes to drawdown. Fee, rebate, and impact terms remain in the
+    reward path and are intentionally excluded from this gross MDD.
     """
     make_policy = policy if policy is not None else _default_policy
     if isinstance(env_factories, str):
@@ -74,7 +80,7 @@ def run_backtest(
             env = factory()
             env.reset(seed=seed + ep)
             done = False
-            mtm_path: list[float] = []
+            mtm_path = [float(env.mark_to_market())]
             reward_accum = 0.0
             while not done:
                 a = make_policy(env)
@@ -122,6 +128,7 @@ def summarize(rows: Sequence[dict]) -> list[dict]:
                 "fill_rate": sum(e["fill_rate"] for e in eps) / n,
                 "completion_rate": sum(e["completion_rate"] for e in eps) / n,
                 "leftover": sum(e["leftover"] for e in eps) / n,
+                "mdd_ticks": sum(e["mdd_ticks"] for e in eps) / n,
                 "steps": sum(e["steps"] for e in eps) / n,
             }
         )

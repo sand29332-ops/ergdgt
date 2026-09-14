@@ -16,7 +16,7 @@ and `HIGHVOL_PLAN.md` (the high-vol execution regime behind the slippage work).
 | Metric | Target | Status |
 |---|---|---|
 | C++ matching engine | >500k ord/s, sub-µs, **0 allocs/op** | 0-alloc ✅ proven; throughput/latency on real hardware |
-| **PPO execution vs best fair baseline** | ~14% lower slippage (high-vol) | ❌ **not reproduced fairly** — 0/5 seeds significant vs `adaptive_pov` on high-vol, worse on calm/low-vol hold-outs, better only under liquidity shocks (+0.4…+1.4 bps, 5/5 seeds); fees+queue on, symmetric info, paired CIs — `docs/results/rl_fairness.md` |
+| **PPO execution vs best fair baseline** | ~14% lower slippage (high-vol) | ❌ **not reproduced fairly** — no consistent high-vol advantage; worse on calm/low-vol hold-outs. Liquidity-shock improvement is significant for 5/5 `novol` and 4/5 `volsym` seeds in the 2026-09-14 rerun. Fees+queue on, symmetric info, paired CIs; fill-rate and gross drawdown CIs are now included — `docs/results/rl_fairness.md` |
 | **Real-tape microstructure signals** (E1–E6) | IC ≠ 0 with CIs on real NASDAQ ITCH | ✅ 12/30/2019 AAPL/QQQ: L1-imbalance rank IC 0.14→0.23 (AAPL) / 0.16→0.46 (QQQ) from h=1 to h=25, CIs ±0.01; fill model calibrated (slope 1.03–1.09); passive fills adversely selected 96–99 % — `docs/RESEARCH.md`, tables in `docs/results/real_tape_12302019.md` |
 | CUDA Monte-Carlo VaR/CVaR | ~40× speedup vs CPU | CPU ✅ exact parity; GPU kernel blocked (no toolkit) |
 
@@ -60,7 +60,7 @@ Pure-NumPy stack (no torch), byte-reproducible:
 | GRPO agent (pure NumPy) | `nexus_quant/agents/grpo.py` | GRPO on the PPO actor interface |
 | Eval harness | `nexus_quant/agents/evaluate.py` | `strategy_table`; per-regime multi-seed `evaluate_regime_ci`, **paired** `paired_difference_ci` |
 | Train+eval CLI | `scripts/train_eval_agent.py` | `--highvol`, `--eval-only`, regime flags |
-| **Fair RL re-verification** | `scripts/rl_fairness_study.py` → `docs/results/rl_fairness.md` | 5 train seeds × 5 eval families × 6 regimes × 2 info modes, fees+queue on |
+| **Fair RL re-verification** | `scripts/rl_fairness_study.py` → `docs/results/rl_fairness.md` | 5 train seeds × 5 eval families × 6 regimes × 2 info modes; same-rollout fill-rate and gross MTM drawdown CIs; configuration-checked policy cache |
 | Research spine (Part 2) | `nexus_quant/research/{features,labels,dataset,experiments,models}.py` | leak-locked features, walk-forward splits, rank IC / block bootstrap / DM |
 | Execution realism (Part 2) | `nexus_quant/execution/{cost_model,metrics,backtest}.py` | fees/rebates/impact, IS vs **market** VWAP, MDD |
 | Order-level queue + fill models (E5) | `nexus_quant/research/queue_dynamics.py` | `OrderLevelTracker`, Kaplan–Meier P(fill), logistic fill model + calibration |
@@ -266,7 +266,7 @@ python python_quant/scripts/rl_fairness_study.py --quick                        
   console; risk↔env inventory CVaR penalty wired (PRs #7–#9)
 - ✅ Monte-Carlo VaR/CVaR — CPU + exact parity (GPU kernel authored, blocked)
 - ❌ PPO slippage headline — **re-verified fairly and not reproduced**: no
-  significant edge over the best fair baseline except under liquidity shocks
+  consistent high-vol edge; the strongest evidence is under liquidity shocks
   (`docs/results/rl_fairness.md`; `plan_2.md` §6 outcome)
 - ✅ Quant research layer (Part 2) Phases 0–5 — leak-locked spine, execution
   realism, order-level queue / fill / adverse-selection studies, E1–E6 on a
