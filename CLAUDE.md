@@ -121,6 +121,13 @@ training · W7-8 profiling, dashboard, benchmarks, write-up.
 
 ## 6. Status — what's DONE (verified 2026-08-30)
 
+**Current repository copy, 2026-09-14:** imported all 98 tracked files and 69
+commits from `gamerapex82-cloud/refree` into `sand29332-ops/ergdgt`, retaining
+authorship and history. Fresh Linux baseline: **159 pytest passed / 1 optional
+real-tape skip, CTest 5/5, lint clean**. Durable setup and a seeded managed Preview
+are in `.hoplite/`; see `docs/IMPORT_PROVENANCE.md`. Older branch/PR/environment
+references below are historical, not the state of this copy.
+
 **Phase 1 — C++ matching engine implemented & tested; pybind `Engine` wired to it.**
 
 | Component | File | State |
@@ -283,6 +290,12 @@ the C++ `compute_var_cvar`) to compute CVaR and applies it as a dynamic holding 
 This is the Person A ↔ Person B integration seam.
 
 ## 7. Next steps (ordered; low-risk foundations first)
+
+**Active Person B milestones (2026-09-14):** broaden real-tape validation; add
+execution/inventory dashboard charts and retire stale RL claims; add E7 fill-rate
+and drawdown reporting; implement a history-fitted VWAP volume curve; verify
+Linux/Windows CI. These run in isolated worktrees and are published separately.
+The original checklist below is retained as project history.
 
 1. ~~**`.gitignore`**~~ — ✅ done 2026-08-24.
 2. ~~**`bindings/CONTRACT.md`**~~ — ✅ done 2026-08-24 (full spec, offsets verified).

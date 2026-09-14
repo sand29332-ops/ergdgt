@@ -66,3 +66,9 @@ Desktop.ini
 # --- Claude Code worktrees: local dev working copies, NEVER track ---
 .claude/worktrees/
 docs/results/quick/
+
+# --- Local Hoplite runtime and isolated parallel checkouts ---
+.hoplite/artifacts/
+.hoplite/runtime/
+.hoplite/worktrees/
+.hoplite/logs/

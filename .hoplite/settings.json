@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "setup": "bash .hoplite/setup.sh",
+    "run": "bash .hoplite/run.sh"
+  }
+}

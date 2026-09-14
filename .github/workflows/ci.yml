@@ -3,7 +3,10 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -49,15 +52,16 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r python_quant/requirements.txt
           python -m pip install -r requirements-dev.txt
-          python -m pip install cmake
       - name: Configure
         shell: bash
         run: |
           cmake -S . -B build \
             -DNEXUS_BUILD_PYBIND=ON \
             -DNEXUS_NATIVE_ARCH=OFF \
+            -DNEXUS_ENABLE_CUDA=OFF \
             -DCMAKE_BUILD_TYPE=Release \
-            -DPython3_EXECUTABLE="$(command -v python)"
+            -DPython3_EXECUTABLE="$(command -v python)" \
+            -Dpybind11_DIR="$(python -m pybind11 --cmakedir)"
       - name: Build
         run: cmake --build build --config Release -j
       - name: CTest
