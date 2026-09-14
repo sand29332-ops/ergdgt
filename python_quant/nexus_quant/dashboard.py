@@ -20,19 +20,24 @@ Windows shared-memory mapping — on Windows use the file-ring path
 from __future__ import annotations
 
 import json
+import logging
 import struct
 from collections import deque
 from collections.abc import Callable, Mapping
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from threading import Lock
 from typing import Any
+from urllib.parse import urlsplit
 
 import numpy as np
 
 from .book_state import BOOK_STATE_DTYPE, DEPTH, empty_state
+from .dashboard_execution import ExecutionConfig, run_execution_demo
 from .replay import check_integrity, spread_ticks
 
 View = Mapping[str, Any]
+logger = logging.getLogger(__name__)
 
 
 def view_from_record(rec: np.ndarray) -> dict[str, Any]:
@@ -128,6 +133,10 @@ class SnapshotHub:
         self.latency_kind = "feed"  # "feed" (transport) or "fill" (execution)
         self._lat_samples: deque[float] = deque(maxlen=_LATENCY_SAMPLES_MAX)
         self._last_seq = -1
+
+    def set_unavailable(self, source: str) -> None:
+        self.view = None
+        self.source = source
 
     # -- latency ------------------------------------------------------------
     def record_latency(self, ns: float, *, kind: str = "feed") -> None:
@@ -323,28 +332,106 @@ def make_handler(
     hub: SnapshotHub,
     poll: Callable[[], None] | None = None,
     page: bytes | None = None,
+    *,
+    execution_runner: Callable[[ExecutionConfig], dict[str, Any]] | None = run_execution_demo,
 ):
+    execution_lock = Lock()
+    feed_lock = Lock()
+
     class Handler(BaseHTTPRequestHandler):
+        timeout = 5
+
         def log_message(self, fmt: str, *args: Any) -> None:
             return
 
-        def do_GET(self) -> None:
-            if poll is not None:
-                poll()
-            if self.path.startswith("/api/state"):
-                body = json.dumps(hub.as_json()).encode()
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(len(body)))
-                self.end_headers()
-                self.wfile.write(body)
-                return
-            body = getattr(self.server, "page", _PAGE.encode())
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
+        def _respond(self, status: int, body: bytes, content_type: str) -> None:
+            self.send_response(status)
+            self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            if status == 405:
+                self.send_header("Allow", "POST")
             self.end_headers()
             self.wfile.write(body)
+
+        def _json(self, status: int, payload: dict[str, Any]) -> None:
+            body = json.dumps(payload, allow_nan=False).encode()
+            self._respond(status, body, "application/json; charset=utf-8")
+
+        def _error(self, status: int, message: str) -> None:
+            self._json(status, {"ok": False, "error": message})
+
+        def do_GET(self) -> None:
+            path = urlsplit(self.path).path
+            if path == "/api/state":
+                try:
+                    with feed_lock:
+                        if poll is not None:
+                            poll()
+                        self._json(200, hub.as_json())
+                except Exception:
+                    logger.exception("Book feed request failed")
+                    self._error(503, "Book feed unavailable; retry when the feed is restored.")
+                return
+            if path == "/api/execution":
+                self._error(405, "Use POST to run a seeded synthetic execution demo.")
+                return
+            if path not in ("/", "/index.html"):
+                self._error(404, "Not found")
+                return
+            body = getattr(self.server, "page", None)
+            if body is None:
+                body = _load_page(page)
+            self._respond(200, body, "text/html; charset=utf-8")
+
+        def do_POST(self) -> None:
+            if urlsplit(self.path).path != "/api/execution":
+                self._error(404, "Not found")
+                return
+            if execution_runner is None:
+                self._error(503, "Synthetic execution telemetry is unavailable on this server.")
+                return
+            if self.headers.get("Content-Type", "").split(";")[0].strip().lower() != "application/json":
+                self._error(415, "Content-Type must be application/json")
+                return
+            lengths = self.headers.get_all("Content-Length", [])
+            if not lengths:
+                self._error(411, "Content-Length is required")
+                return
+            if self.headers.get("Transfer-Encoding") or len(lengths) != 1 or not lengths[0].isdigit():
+                self._error(400, "Invalid request framing")
+                return
+            try:
+                length = int(lengths[0])
+            except ValueError:
+                self._error(413, "Execution request is too large")
+                return
+            if length > 1024:
+                self._error(413, "Execution request is too large")
+                return
+            try:
+                raw = self.rfile.read(length)
+                if len(raw) != length:
+                    raise ValueError("incomplete request body")
+                config = ExecutionConfig.from_payload(json.loads(raw))
+            except TimeoutError:
+                self._error(408, "Execution request timed out")
+                return
+            except (TypeError, ValueError, UnicodeError):
+                self._error(400, "Invalid execution request: use a fair strategy and bounded integer seed, horizon and inventory.")
+                return
+            if not execution_lock.acquire(blocking=False):
+                self._error(409, "Another synthetic execution is running; retry shortly.")
+                return
+            try:
+                result = execution_runner(config)
+                self._json(200, result)
+            except Exception:
+                logger.exception("Synthetic execution request failed")
+                self._error(500, "Synthetic execution failed. No telemetry is available; retry the run.")
+            finally:
+                execution_lock.release()
 
     return Handler
 
@@ -355,7 +442,11 @@ def serve(
     port: int = 8765,
     poll: Callable[[], None] | None = None,
     page: bytes | None = None,
+    *,
+    execution_runner: Callable[[ExecutionConfig], dict[str, Any]] | None = run_execution_demo,
 ) -> ThreadingHTTPServer:
-    httpd = ThreadingHTTPServer((host, port), make_handler(hub, poll, page))
+    httpd = ThreadingHTTPServer(
+        (host, port), make_handler(hub, poll, page, execution_runner=execution_runner)
+    )
     httpd.page = _load_page(page)
     return httpd

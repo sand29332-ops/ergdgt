@@ -41,6 +41,46 @@
   a{color:var(--accent)}
   .mono{font-family:var(--mono)}
   .nums{font-variant-numeric:tabular-nums;font-family:var(--mono)}
+  [hidden]{display:none!important}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+
+  .exec-controls{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr auto;gap:12px;
+    align-items:end;border:0;padding:0;margin:18px 0}
+  .exec-controls label{display:grid;gap:6px;font-size:12px;color:var(--muted);min-width:0}
+  .exec-controls input,.exec-controls select,.exec-controls button{width:100%;min-width:0;
+    border:1px solid var(--line-strong);border-radius:7px;padding:10px;background:var(--surface2);
+    color:var(--text);font-family:var(--mono);font-size:12px;min-height:42px}
+  .exec-controls button{background:var(--accent);color:#1a1205;font-weight:600;cursor:pointer}
+  .exec-controls:disabled{opacity:.65}
+  .exec-controls:disabled button{cursor:wait}
+  .exec-note,.exec-status{color:var(--muted);font-size:13px}
+  .exec-status{min-height:1.5em;margin:12px 0}
+  .exec-status[data-state="error"]{color:var(--bad)}
+  .exec-status[data-state="ready"]{color:var(--good)}
+  .exec-empty{border:1px dashed var(--line-strong);border-radius:12px;padding:28px;color:var(--muted)}
+  .exec-empty p{margin:6px 0 0}
+  .exec-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}
+  .exec-metrics div{padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+  .exec-metrics dt{font-size:12px;color:var(--muted)}
+  .exec-metrics dd{margin:6px 0 0;font-family:var(--mono);font-size:20px;font-variant-numeric:tabular-nums}
+  .exec-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  .exec-charts figure{margin:0;min-width:0}
+  .exec-charts figcaption{font-size:12px;color:var(--muted);margin-top:8px}
+  .exec-svg text{fill:var(--muted);font-size:12px}
+  .exec-svg .exec-grid{stroke:var(--line);stroke-width:1}
+  .exec-child{fill:var(--bid)}
+  .exec-terminal{fill:var(--warn)}
+  .exec-inventory{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round}
+  .exec-ledger{margin-top:20px}
+  .exec-ledger summary{cursor:pointer;color:var(--accent);padding:8px 0}
+  .exec-ledger caption{text-align:left;color:var(--muted);padding:12px 0}
+  .exec-ledger .tablewrap{max-height:300px;overflow:auto}
+  .research-note{border-left:3px solid var(--warn)}
+  @media(max-width:900px){.exec-controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .exec-controls button{grid-column:1/-1}}
+  @media(max-width:700px){.exec-charts{grid-template-columns:1fr}
+    .exec-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:420px){.exec-controls{grid-template-columns:1fr}.exec-metrics dd{font-size:17px}}
 
   /* ---------- header ---------- */
   header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:26px 0 6px}
@@ -287,11 +327,11 @@
   <section class="hero">
     <div class="top">
       <div class="status-side">
-        <div class="kicker">all work up — and live</div>
-        <h2>Every <span class="good">runnable</span> subsystem is operational.</h2>
-        <p class="sub">The desk below is the live overlay: when the Python dashboard server runs, it polls the frozen
-          448-byte state contract (shared-memory ring, file ring, or a synthetic StubOrderBook walk) and renders the
-          order book in real time. Everything below the fold is the verified static console.</p>
+        <div class="kicker">book feed &middot; execution lab</div>
+        <h2>Observe the book. <span class="good">Trace the execution.</span></h2>
+        <p class="sub">The book pane polls the frozen 448-byte state contract. The separate
+          <a href="#execution">seeded execution lab</a> records simulated agent fills, never shm-ring executions.
+          The verification console below is a historical snapshot, not live CI.</p>
         <div class="statline">
           <div class="stat"><b id="hs_seq">—</b><span>live seq</span></div>
           <div class="stat"><b id="hs_src">none</b><span>feed source</span></div>
@@ -306,7 +346,7 @@
   <!-- ============ LIVE desk ============ -->
   <section class="section" id="live">
     <div class="livehead">
-      <h3>Live order book</h3>
+      <h3>Order book feed</h3>
       <span class="livepill off" id="livepill">offline</span>
       <span class="mono sub" style="color:var(--faint);font-size:11.5px" id="liveissues"></span>
     </div>
@@ -358,33 +398,108 @@
     <div class="tradetick"><span style="color:var(--faint);letter-spacing:.08em;text-transform:uppercase;font-size:10.5px">last trade</span><b id="tradetick">no trades yet</b></div>
   </section>
 
-  <!-- ============ slippage ============ -->
-  <section class="section">
-    <h3>Execution slippage by strategy</h3>
-    <p class="desc">Measured 2026-09-07 &mdash; 100 seeded episodes, high-volatility regime. The PPO agent times fills
-      around adverse mid-moves to undercut every baseline on implementation shortfall.</p>
-    <div class="chartcard">
-      <div class="cap">
-        <h4>Implementation shortfall</h4><span class="sub">bps &middot; lower is better &middot; high-vol regime</span>
+  <section class="section" id="execution" aria-labelledby="execution-heading">
+    <div class="livehead">
+      <h3 id="execution-heading">Execution lab</h3>
+      <span class="livepill stale">Synthetic execution</span>
+    </div>
+    <p class="desc" id="execution-disclaimer">Run one deterministic <span class="mono">OrderBookEnv</span> sell
+      episode. These are actual simulator fills, not live shm-ring telemetry or exchange executions.
+      The same inputs reproduce the same run; one episode is not evidence of a strategy edge.</p>
+    <form id="execution-form" aria-describedby="execution-disclaimer execution-settings">
+      <fieldset class="exec-controls" id="execution-controls">
+        <legend class="tag">Seeded run settings</legend>
+        <label for="execution-strategy">Fair baseline
+          <select id="execution-strategy" name="strategy">
+            <option value="schedule_twap">schedule_twap</option>
+            <option value="adaptive_pov">adaptive_pov</option>
+            <option value="is_aware">is_aware</option>
+          </select>
+        </label>
+        <label for="execution-seed">Seed
+          <input id="execution-seed" name="seed" type="number" min="0" max="4294967295" step="1" value="20973" required>
+        </label>
+        <label for="execution-horizon">Horizon (steps)
+          <input id="execution-horizon" name="horizon" type="number" min="1" max="80" step="1" value="40" required>
+        </label>
+        <label for="execution-inventory">Inventory (shares)
+          <input id="execution-inventory" name="inventory" type="number" min="1" max="10000" step="1" value="2000" required>
+        </label>
+        <button type="submit" id="execution-run">Run seeded demo</button>
+      </fieldset>
+    </form>
+    <p class="exec-note" id="execution-settings">Calm regime &middot; uniform queue model &middot; regime feature off.
+      Fair baseline rules share the environment observation surface. This run does not load a PPO policy.</p>
+    <p class="exec-status" id="execution-status" role="status" aria-live="polite">Execution telemetry unavailable &mdash; no run yet.</p>
+    <div class="exec-empty" id="execution-empty">
+      <strong>No execution telemetry</strong>
+      <p>Run the seeded demo to populate the timeline and inventory chart. Book snapshots alone contain no agent-fill history.</p>
+    </div>
+    <noscript><p class="exec-note">JavaScript and the Python dashboard server are required to run the demo. Execution telemetry is unavailable.</p></noscript>
+    <div id="execution-results" aria-busy="false" hidden>
+      <p class="exec-note mono" id="execution-meta"></p>
+      <dl class="exec-metrics">
+        <div><dt>Filled shares</dt><dd id="execution-filled">—</dd></div>
+        <div><dt>Remaining shares</dt><dd id="execution-remaining">—</dd></div>
+        <div><dt>Completion</dt><dd id="execution-completion">—</dd></div>
+        <div><dt>Gross fill VWAP (ticks)</dt><dd id="execution-vwap">—</dd></div>
+        <div><dt>Gross arrival shortfall (bps)</dt><dd id="execution-shortfall">—</dd></div>
+        <div><dt>Terminal liquidation (shares)</dt><dd id="execution-terminal">—</dd></div>
+      </dl>
+      <p class="exec-note">VWAP uses exact cash proceeds. Shortfall is sell-side, filled-quantity only: positive means a cost.
+        These gross metrics exclude fees, rebates, impact and unfilled-inventory opportunity cost; cost settings affect the environment reward, not cash.</p>
+      <p class="exec-note" id="execution-market"></p>
+      <div class="exec-charts">
+        <figure class="chartcard">
+          <div class="cap"><h4>Execution timeline</h4><span class="sub">filled shares / step</span></div>
+          <div class="legend">
+            <span class="li"><span class="sw bid"></span>child fills</span>
+            <span class="li"><span class="sw spr"></span>terminal liquidation</span>
+          </div>
+          <svg class="exec-svg" id="execution-timeline" viewBox="0 0 520 240" role="img" aria-labelledby="execution-timeline-title execution-timeline-desc">
+            <title id="execution-timeline-title">Synthetic execution fill timeline</title>
+            <desc id="execution-timeline-desc">No execution telemetry available.</desc>
+          </svg>
+          <figcaption>Only recorded fills are plotted, grouped by completed simulation step. The terminal dump is included, not assumed complete.</figcaption>
+        </figure>
+        <figure class="chartcard">
+          <div class="cap"><h4>Inventory remaining</h4><span class="sub">shares / step</span></div>
+          <div class="legend"><span class="li"><span class="sw mid"></span>observed inventory after each step</span></div>
+          <svg class="exec-svg" id="execution-inventory-chart" viewBox="0 0 520 240" role="img" aria-labelledby="execution-inventory-title execution-inventory-desc">
+            <title id="execution-inventory-title">Synthetic execution remaining inventory</title>
+            <desc id="execution-inventory-desc">No execution telemetry available.</desc>
+          </svg>
+          <figcaption>Starts at the requested inventory and ends at the observed remainder. No extrapolation after the episode stops.</figcaption>
+        </figure>
       </div>
-      <div class="legend">
-        <span class="li"><span class="sw" style="background:var(--accent)"></span>PPO agent (learned)</span>
-        <span class="li"><span class="sw" style="background:var(--surface3);border:1px solid var(--line-strong)"></span>baselines</span>
-        <span class="li"><span class="sw" style="background:transparent;border-top:2px dashed var(--warn)"></span>VWAP reference</span>
-      </div>
-      <svg id="chart" viewBox="0 0 760 320" role="img" aria-label="Bar chart of implementation shortfall in basis points by strategy. PPO lowest at 1.401, then POV 2.519, TWAP 2.659, Passive 2.679, VWAP 2.827."></svg>
-      <div class="tablewrap">
-        <table>
-          <thead><tr><th>strategy</th><th>reward</th><th>shortfall (bps)</th><th>vs VWAP</th><th>leftover</th></tr></thead>
-          <tbody>
-            <tr class="herorow"><td class="strategy hero">PPO (learned)</td><td class="nums">-5.04</td><td class="nums">1.401</td><td class="pos nums">+50.4%</td><td class="nums">26.3</td></tr>
-            <tr><td class="strategy">POV</td><td class="nums">-9.32</td><td class="nums">2.519</td><td class="pos nums">+10.9%</td><td class="nums">45.0</td></tr>
-            <tr><td class="strategy">TWAP</td><td class="nums">-8.60</td><td class="nums">2.659</td><td class="pos nums">+5.9%</td><td class="nums">39.6</td></tr>
-            <tr><td class="strategy">Passive</td><td class="nums">-12.81</td><td class="nums">2.679</td><td class="pos nums">+5.3%</td><td class="nums">287.8</td></tr>
-            <tr><td class="strategy">VWAP (baseline)</td><td class="nums">-7.40</td><td class="nums">2.827</td><td class="nums">0.0%</td><td class="nums">24.3</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <details class="exec-ledger">
+        <summary>Inspect the fill ledger and inventory samples</summary>
+        <p class="exec-note">Fill prices are the environment's integer aggregate ticks, floored when sweeping levels. They are not individual venue fills.</p>
+        <div class="tablewrap" role="region" aria-label="Execution fill ledger" tabindex="0">
+          <table><caption>Recorded simulator fills (completed step numbering)</caption>
+            <thead><tr><th scope="col">Step</th><th scope="col">Type</th><th scope="col">Price (ticks)</th><th scope="col">Shares</th></tr></thead>
+            <tbody id="execution-fill-rows"></tbody>
+          </table>
+        </div>
+        <div class="tablewrap" role="region" aria-label="Execution inventory samples" tabindex="0">
+          <table><caption>Inventory and exact cumulative cash after each step, including the initial state</caption>
+            <thead><tr><th scope="col">Step</th><th scope="col">Filled</th><th scope="col">Remaining</th><th scope="col">Cash (tick-shares)</th></tr></thead>
+            <tbody id="execution-inventory-rows"></tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section class="section" id="fair-study" aria-labelledby="fair-study-heading">
+    <h3 id="fair-study-heading">RL fairness: headline retired</h3>
+    <div class="chartcard research-note">
+      <p><strong>The historical VWAP-beating claim was not reproduced broadly.</strong>
+        The committed fair study found no consistent significant PPO edge on highvol, highvol_null or trending;
+        PPO was worse on calm and lowvol hold-outs. A significant edge appeared only under liquidity shocks.</p>
+      <p class="exec-note">Source: <code>docs/results/rl_fairness.md</code>, 2026-09-13.
+        Five training seeds, hold-out regimes, symmetric information, fees and queue model enabled, paired confidence intervals.
+        The execution demo above does not reproduce that study.</p>
     </div>
   </section>
 
@@ -466,9 +581,9 @@
           <div class="testrow"><span class="name">High-vol regime <code>test_highvol_env.py</code></span><span class="caret">&#9656;</span><span class="res ok">11 / 11</span>
             <span class="cmd">python -m pytest python_quant/tests/test_highvol_env.py
 &#8594; 11 passed</span></div>
-          <div class="testrow"><span class="name">Headline eval (live)</span><span class="caret">&#9656;</span><span class="res ok">+50.4% vs VWAP</span>
-            <span class="cmd">python python_quant/scripts/train_eval_agent.py --highvol --vol-feature --eval-only python_quant/artifacts/policy_ppo_highvol.npz
-&#8594; ppo 1.401 vs vwap 2.827 bps = +50.4% (100 seeded episodes)</span></div>
+          <div class="testrow"><span class="name">Fair RL re-verification (2026-09-13)</span><span class="caret">&#9656;</span><span class="res warn">headline retired</span>
+            <span class="cmd">docs/results/rl_fairness.md
+&#8594; No broad significant edge; edge only in liquidity shocks. Worse on calm / lowvol hold-outs.</span></div>
         </div>
       </div>
     </article>
@@ -622,14 +737,13 @@
 
 </div>
 
-<div class="tooltip" id="tip"></div>
 <div class="tooltip" id="tip2"></div>
 
 <script>
   /* ============================================================
      LIVE desk — polls /api/state every 400 ms
      ============================================================ */
-  var DEPTH=10, lastSeq=-1, stalls=0, paused=false;
+  var DEPTH=10, lastSeq=-1, stalls=0, paused=false, currentSource='none';
   var el=function(id){return document.getElementById(id);};
   function fmt(n,d){
     if(n==null) return '—';
@@ -639,7 +753,7 @@
   function setPill(state){
     var p=el('livepill');
     p.className='livepill '+state;
-    p.textContent = state==='live'?'LIVE' : state==='stale'?'STALE' : 'offline';
+    p.textContent = state==='live'?(currentSource==='synthetic'?'SYNTHETIC BOOK':currentSource.toUpperCase()) : state==='stale'?'STALE' : 'offline';
   }
   function showOffline(reason){ setPill('off'); el('liveissues').textContent=reason||''; }
 
@@ -726,7 +840,8 @@
 
   /* ---- main render ---- */
   function render(s){
-    el('livepill').className='livepill live'; el('livepill').textContent='LIVE';
+    currentSource=s.source||'none';
+    setPill('live');
     el('liveissues').textContent = s.issues&&s.issues.length ? 'integrity: '+s.issues.join(', ') : '';
     el('hs_seq').textContent=fmt(s.seq);
     el('hs_src').textContent=(s.source||'none').toUpperCase();
@@ -773,53 +888,126 @@
     if(!paused) tick();
   });
 
-  /* ============================================================
-     Static console — slippage chart
-     ============================================================ */
+  /* Request-scoped execution telemetry never consumes /api/state. */
   (function(){
-    var data=[
-      {name:'PPO',    val:1.401, vs:'+50.4%', rw:-5.04, left:'26.3', hero:true},
-      {name:'POV',    val:2.519, vs:'+10.9%', rw:-9.32, left:'45.0'},
-      {name:'TWAP',   val:2.659, vs:'+5.9%',  rw:-8.60, left:'39.6'},
-      {name:'Passive',val:2.679, vs:'+5.3%',  rw:-12.81,left:'287.8'},
-      {name:'VWAP',   val:2.827, vs:'0.0%',   rw:-7.40, left:'24.3', ref:true}
-    ];
-    var W=760,H=320, ML=64, MR=150, MT=8, MB=40;
-    var pw=W-ML-MR, ph=H-MT-MB, max=3.0;
-    var x=function(v){return ML+v/max*pw;};
-    var rowH=ph/data.length, bh=Math.min(26,rowH-16);
-    var svg=document.getElementById('chart'), g='';
-    [1,2,3].forEach(function(t){
-      g+='<g class="gl"><line x1="'+x(t)+'" y1="'+MT+'" x2="'+x(t)+'" y2="'+(MT+ph)+'"/></g>';
-      g+='<text class="ax" x="'+x(t)+'" y="'+(MT+ph+18)+'" text-anchor="middle">'+t+'.0</text>';
-    });
-    g+='<text class="ax" x="'+ML+'" y="'+(MT+ph+18)+'" text-anchor="middle" style="font-size:11px">0</text>';
-    var ref=data[4];
-    g+='<line class="vref" x1="'+x(ref.val)+'" y1="'+MT+'" x2="'+x(ref.val)+'" y2="'+(MT+ph)+'"/>';
-    g+='<text class="vlabel" x="'+(x(ref.val)+7)+'" y="'+(MT+14)+'">VWAP baseline 2.827</text>';
-    data.forEach(function(d,i){
-      var y=MT+i*rowH, h=bh;
-      var cls=d.hero?'bar-hero':(d.ref?'bar-vwap':'bar-field');
-      g+='<rect class="'+cls+'" data-i="'+i+'" x="'+ML+'" y="'+(y+rowH/2-h/2)+'" width="'+(x(d.val)-ML)+'" height="'+h+'" rx="4" ry="4"/>';
-      var lc=d.hero?'blabel-hero':'blabel';
-      g+='<text class="'+lc+'" x="'+(x(d.val)+8)+'" y="'+(y+rowH/2+4)+'">'+d.val.toFixed(3)+' bps</text>';
-      g+='<text class="'+(d.hero?'rowlabel-hero':'rowlabel')+'" x="'+(ML-10)+'" y="'+(y+rowH/2+4)+'" text-anchor="end">'+d.name+'</text>';
-    });
-    svg.innerHTML=g;
-    var tip=document.getElementById('tip');
-    svg.querySelectorAll('rect[data-i]').forEach(function(r){
-      var d=data[+r.getAttribute('data-i')];
-      r.addEventListener('mousemove',function(e){
-        tip.innerHTML='<b>'+d.name+'</b>'+
-          '<span class="tt">shortfall <span>'+d.val.toFixed(3)+' bps</span></span>'+
-          '<span class="tt">vs VWAP <span>'+d.vs+'</span></span>'+
-          '<span class="tt">reward <span>'+d.rw+'</span></span>'+
-          '<span class="tt">leftover <span>'+d.left+'</span></span>';
-        tip.style.opacity=1;
-        var rect=svg.getBoundingClientRect();
-        tip.style.left=(e.clientX-rect.left+14)+'px'; tip.style.top=(e.clientY-rect.top-10)+'px';
+    var form=el('execution-form'), controls=el('execution-controls'), button=el('execution-run');
+    var status=el('execution-status'), results=el('execution-results'), empty=el('execution-empty');
+    var ns='http://www.w3.org/2000/svg';
+    function node(tag, attrs, text){
+      var n=document.createElementNS(ns,tag);
+      Object.keys(attrs||{}).forEach(function(k){n.setAttribute(k,attrs[k]);});
+      if(text!=null)n.textContent=text;
+      return n;
+    }
+    function chart(id, titleId, descId, title, description, maximum, horizon){
+      var svg=el(id), left=54, right=498, top=22, bottom=190;
+      var x=function(step){return left+step/horizon*(right-left);};
+      var y=function(value){return bottom-value/maximum*(bottom-top);};
+      svg.replaceChildren(node('title',{id:titleId},title),node('desc',{id:descId},description));
+      Array.from(new Set([0,Math.ceil(maximum/2),maximum])).forEach(function(value){
+        svg.appendChild(node('line',{x1:left,x2:right,y1:y(value),y2:y(value),'class':'exec-grid'}));
+        svg.appendChild(node('text',{x:left-8,y:y(value)+4,'text-anchor':'end'},fmt(value)));
       });
-      r.addEventListener('mouseleave',function(){ tip.style.opacity=0; });
+      Array.from(new Set([0,Math.ceil(horizon/2),horizon])).forEach(function(step){
+        svg.appendChild(node('text',{x:x(step),y:bottom+22,'text-anchor':'middle'},step));
+      });
+      svg.appendChild(node('text',{x:left,y:13},'shares'));
+      svg.appendChild(node('text',{x:(left+right)/2,y:234,'text-anchor':'middle'},'completed simulation step'));
+      return {svg:svg,x:x,y:y,bottom:bottom,width:(right-left)/horizon*0.7};
+    }
+    function tableRows(id, rows){
+      var body=el(id);
+      body.replaceChildren();
+      rows.forEach(function(values){
+        var row=document.createElement('tr');
+        values.forEach(function(value){
+          var cell=document.createElement('td');
+          cell.textContent=value;
+          row.appendChild(cell);
+        });
+        body.appendChild(row);
+      });
+    }
+    function renderExecution(data){
+      var s=data.summary, c=data.config, history=data.history, fills=data.fills;
+      el('execution-meta').textContent=c.strategy+' · seed '+c.seed+' · sell '+fmt(c.inventory)+
+        ' shares · '+s.steps+'/'+c.horizon+' steps · '+(s.stop_reason==='horizon'?'horizon reached':'inventory filled');
+      el('execution-filled').textContent=fmt(s.filled);
+      el('execution-remaining').textContent=fmt(s.remaining);
+      el('execution-completion').textContent=fmt(s.completion_pct,1)+'%';
+      el('execution-vwap').textContent=fmt(s.execution_vwap_ticks,3);
+      el('execution-shortfall').textContent=fmt(s.arrival_shortfall_bps,3);
+      el('execution-terminal').textContent=fmt(s.terminal_filled);
+      el('execution-market').textContent=s.market_vwap_ticks==null?'Market VWAP unavailable: no exogenous prints.':
+        'Exogenous market VWAP: '+fmt(s.market_vwap_ticks,3)+' ticks · gross sell slippage: '+
+        fmt(s.market_slippage_bps,3)+' bps. Arrival mid: '+fmt(s.arrival_mid_ticks,1)+' ticks.';
+
+      var summary=fmt(s.filled)+' shares filled; '+fmt(s.remaining)+' remaining after '+s.steps+' steps.';
+      var peak=Math.max.apply(null,history.map(function(h){return h.filled;}));
+      var timeline=chart('execution-timeline','execution-timeline-title','execution-timeline-desc',
+        'Synthetic execution fill timeline',summary+' Includes '+fmt(s.terminal_filled)+' terminal-liquidation shares.',Math.max(1,peak),c.horizon);
+      history.slice(1).forEach(function(h){
+        var terminal=fills.filter(function(f){return f.step===h.step&&f.kind==='terminal';})
+          .reduce(function(total,f){return total+f.quantity;},0);
+        var child=h.filled-terminal;
+        if(child>0)timeline.svg.appendChild(node('rect',{'class':'exec-child',x:timeline.x(h.step-0.5)-timeline.width/2,
+          y:timeline.y(child),width:timeline.width,height:timeline.bottom-timeline.y(child)}));
+        if(terminal>0)timeline.svg.appendChild(node('rect',{'class':'exec-terminal',x:timeline.x(h.step-0.5)-timeline.width/2,
+          y:timeline.y(h.filled),width:timeline.width,height:timeline.y(child)-timeline.y(h.filled)}));
+      });
+      var inventory=chart('execution-inventory-chart','execution-inventory-title','execution-inventory-desc',
+        'Synthetic execution remaining inventory','Starts at '+fmt(c.inventory)+' shares. '+summary,c.inventory,c.horizon);
+      var path='M'+inventory.x(0)+' '+inventory.y(history[0].remaining);
+      history.slice(1).forEach(function(h){path+=' H'+inventory.x(h.step)+' V'+inventory.y(h.remaining);});
+      inventory.svg.appendChild(node('path',{'class':'exec-inventory',d:path}));
+      tableRows('execution-fill-rows',fills.length?fills.map(function(f){
+        return [f.step,f.kind==='terminal'?'terminal liquidation':f.kind,fmt(f.price_ticks),fmt(f.quantity)];
+      }):[['—','No fills recorded','—','0']]);
+      tableRows('execution-inventory-rows',history.map(function(h){
+        return [h.step,fmt(h.filled),fmt(h.remaining),fmt(h.cash_ticks)];
+      }));
+      results.hidden=false;
+      empty.hidden=true;
+      status.dataset.state='ready';
+      status.textContent='Synthetic run complete. '+summary;
+    }
+    form.addEventListener('submit',async function(event){
+      event.preventDefault();
+      if(controls.disabled||!form.reportValidity())return;
+      var payload={strategy:el('execution-strategy').value,seed:Number(el('execution-seed').value),
+        horizon:Number(el('execution-horizon').value),inventory:Number(el('execution-inventory').value)};
+      controls.disabled=true;
+      button.textContent='Running…';
+      results.hidden=true;
+      empty.hidden=true;
+      results.setAttribute('aria-busy','true');
+      status.dataset.state='loading';
+      status.textContent='Running a seeded synthetic episode…';
+      var controller=new AbortController();
+      var timeout=setTimeout(function(){controller.abort();},20000);
+      try{
+        var response=await fetch('/api/execution',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(payload),signal:controller.signal});
+        var data;
+        try{data=await response.json();}catch(e){throw new Error('The execution API returned an invalid response.');}
+        if(!response.ok||!data.ok)throw new Error(data.error||'The execution API is unavailable.');
+        if(data.source!=='synthetic-execution'||!data.config||!data.summary||!Array.isArray(data.history)||!data.history.length||!Array.isArray(data.fills)){
+          throw new Error('The execution API did not return fill telemetry.');
+        }
+        renderExecution(data);
+      }catch(error){
+        empty.hidden=false;
+        results.hidden=true;
+        status.dataset.state='error';
+        var reason=error.name==='AbortError'?'The run timed out; retry shortly.':
+          error instanceof TypeError?'Cannot reach the execution API. Open this page through the Python dashboard server and retry.':error.message;
+        status.textContent='Execution telemetry unavailable. '+reason;
+      }finally{
+        clearTimeout(timeout);
+        controls.disabled=false;
+        button.textContent='Run seeded demo';
+        results.setAttribute('aria-busy','false');
+      }
     });
   })();
 

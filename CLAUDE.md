@@ -128,6 +128,11 @@ real-tape skip, CTest 5/5, lint clean**. Durable setup and a seeded managed Prev
 are in `.hoplite/`; see `docs/IMPORT_PROVENANCE.md`. Older branch/PR/environment
 references below are historical, not the state of this copy.
 
+**Dashboard milestone, 2026-09-14:** seeded execution timeline, inventory chart,
+fill ledger, and unavailable/error states are implemented; both dashboard pages
+retire the unfair PPO headline. Verified **232 pytest passes / 1 optional tape
+skip**, lint, real-browser execution/retry, and a 390px layout without overflow.
+
 **Phase 1 — C++ matching engine implemented & tested; pybind `Engine` wired to it.**
 
 | Component | File | State |
@@ -291,10 +296,10 @@ This is the Person A ↔ Person B integration seam.
 
 ## 7. Next steps (ordered; low-risk foundations first)
 
-**Active Person B milestones (2026-09-14):** broaden real-tape validation; add
-execution/inventory dashboard charts and retire stale RL claims; add E7 fill-rate
-and drawdown reporting; implement a history-fitted VWAP volume curve; verify
-Linux/Windows CI. These run in isolated worktrees and are published separately.
+**Active Person B milestones (2026-09-14):** broaden real-tape validation; add E7
+fill-rate and drawdown reporting; implement a history-fitted VWAP volume curve.
+The execution dashboard is complete. The import/setup milestone passed
+Linux/Windows CI; each subsequent milestone is checked and published separately.
 The original checklist below is retained as project history.
 
 1. ~~**`.gitignore`**~~ — ✅ done 2026-08-24.

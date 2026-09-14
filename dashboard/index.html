@@ -255,15 +255,15 @@
   <section class="hero">
     <div class="top">
       <div class="status-side">
-        <div class="kicker">is all the work up?</div>
-        <h2>Every <span class="good">runnable</span> subsystem is operational.</h2>
-        <p class="sub">All 14 test suites across the C++ engine, the Python quant stack, and the pybind seam
-          pass — re-verified live this session. One honest caveat: the CUDA risk kernel compiles and is
-          CPU-validated, but the ~40&times; GPU speedup can't be measured here (no CUDA toolkit on this box).</p>
+        <div class="kicker">historical verification reference</div>
+        <h2>Systems evidence. <span class="good">Honest research.</span></h2>
+        <p class="sub">This static console records earlier systems checks, not live CI or execution telemetry.
+          The RL slippage headline is retired after fair re-verification. The CUDA kernel is authored;
+          its GPU compilation and speedup still require a CUDA machine.</p>
         <div class="statline">
           <div class="stat"><b>14/14</b><span>test suites</span></div>
           <div class="stat"><b>4.71M</b><span>engine checks</span></div>
-          <div class="stat"><b>+50.4%</b><span>vs VWAP slippage</span></div>
+          <div class="stat"><b>Retired</b><span>RL slippage headline</span></div>
           <div class="stat"><b>448 B</b><span>ABI lock intact</span></div>
         </div>
       </div>
@@ -271,12 +271,12 @@
         <div class="ledger">
           <div class="row"><span class="k">C++ matching engine</span><span class="v nums ok">PASS 86 + 4.67M checks</span></div>
           <div class="row"><span class="k">Shared-memory ring</span><span class="v nums ok">PASS 30,011 checks</span></div>
-          <div class="row"><span class="k">RL execution agent (PPO)</span><span class="v nums ok">12/12 + headline</span></div>
+          <div class="row"><span class="k">RL execution agent (PPO)</span><span class="v nums warn">headline not reproduced broadly</span></div>
           <div class="row"><span class="k">ITCH replay + env</span><span class="v nums ok">PASS 22 tests</span></div>
           <div class="row"><span class="k">CPU risk engine</span><span class="v nums ok">PASS 9 + 3 parity</span></div>
           <div class="row"><span class="k">Pybind seam (Engine vs oracle)</span><span class="v nums ok">PASS 8</span></div>
           <div class="row"><span class="k">CUDA risk kernel / ~40&times;</span><span class="v nums warn">BLOCKED &mdash; no toolkit</span></div>
-          <div class="row"><span class="k">Python dashboard (subsys 4/5)</span><span class="v nums warn">PENDING &mdash; ring core done</span></div>
+          <div class="row"><span class="k">Python dashboard (subsys 4/5)</span><span class="v nums">separate server &middot; seeded execution lab</span></div>
         </div>
       </div>
     </div>
@@ -289,10 +289,10 @@
       <span class="lbl">engine throughput</span>
       <span class="val nums">0</span><span class="delta ok">allocs / op</span>
       <span class="foot">hot path, both workloads &mdash; IdMap proved it</span></div>
-    <div class="kpi" data-flag="ok"><div class="corner"></div>
-      <span class="lbl">RL headline</span>
-      <span class="val nums">+50.4%</span><span class="delta ok">lower slippage</span>
-      <span class="foot">PPO 1.401 vs VWAP 2.827 bps, high-vol</span></div>
+    <div class="kpi" data-flag="warn"><div class="corner"></div>
+      <span class="lbl">RL fair study</span>
+      <span class="val">Retired</span><span class="delta warn">broad headline</span>
+      <span class="foot">significant edge only under liquidity shocks</span></div>
     <div class="kpi" data-flag="ok"><div class="corner"></div>
       <span class="lbl">CPU risk</span>
       <span class="val nums">55M</span><span class="delta ok">path-steps / s</span>
@@ -307,38 +307,28 @@
       <span class="foot">kernel authored, CPU-validated &mdash; not compilable here</span></div>
     <div class="kpi" data-flag="warn"><div class="corner"></div>
       <span class="lbl">live dashboard</span>
-      <span class="val nums">&mdash;</span><span class="delta warn">next up</span>
-      <span class="foot">ring producer/probe verified live; Python consumer pending</span></div>
+      <span class="val nums">&mdash;</span><span class="delta warn">static console</span>
+      <span class="foot">execution telemetry unavailable on this static page</span></div>
   </section>
 
-  <!-- ============ chart ============ -->
-  <section class="section">
-    <h3>Execution slippage by strategy</h3>
-    <p class="desc">Measured live this session &mdash; 100 seeded episodes, high-volatility regime. The PPO agent times
-      fills around adverse mid-moves to undercut every baseline on implementation shortfall.</p>
+  <section class="section" id="fair-study" aria-labelledby="fair-study-heading">
+    <h3 id="fair-study-heading">RL fairness: headline retired</h3>
+    <p class="desc">The historical VWAP-beating claim was not reproduced broadly. The obsolete comparison
+      chart has been removed rather than presented as current evidence.</p>
     <div class="chartcard">
-      <div class="cap">
-        <h4>Implementation shortfall</h4><span class="sub">bps &middot; lower is better &middot; high-vol regime</span>
-      </div>
-      <div class="legend">
-        <span class="li"><span class="sw hero"></span>PPO agent (learned)</span>
-        <span class="li"><span class="sw field"></span>baselines</span>
-        <span class="li"><span class="sw" style="background:transparent;border-top:2px dashed var(--warn)"></span>VWAP reference</span>
-      </div>
-      <svg id="chart" viewBox="0 0 760 320" role="img" aria-label="Bar chart of implementation shortfall in basis points by strategy. PPO lowest at 1.401, then POV 2.519, TWAP 2.659, Passive 2.679, VWAP 2.827."></svg>
-      <div class="tablewrap">
-        <table>
-          <thead><tr><th>strategy</th><th>reward</th><th>shortfall (bps)</th><th>vs VWAP</th><th>leftover</th></tr></thead>
-          <tbody>
-            <tr class="herorow"><td class="strategy hero">PPO (learned)</td><td class="nums">-5.04</td><td class="nums">1.401</td><td class="pos nums">+50.4%</td><td class="nums">26.3</td></tr>
-            <tr><td class="strategy">POV</td><td class="nums">-9.32</td><td class="nums">2.519</td><td class="pos nums">+10.9%</td><td class="nums">45.0</td></tr>
-            <tr><td class="strategy">TWAP</td><td class="nums">-8.60</td><td class="nums">2.659</td><td class="pos nums">+5.9%</td><td class="nums">39.6</td></tr>
-            <tr><td class="strategy">Passive</td><td class="nums">-12.81</td><td class="nums">2.679</td><td class="pos nums">+5.3%</td><td class="nums">287.8</td></tr>
-            <tr><td class="strategy">VWAP (baseline)</td><td class="nums">-7.40</td><td class="nums">2.827</td><td class="nums">0.0%</td><td class="nums">24.3</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <p>No consistent significant PPO edge on highvol, highvol_null or trending;
+        PPO was worse on calm and lowvol hold-outs. A significant edge appeared only under liquidity shocks.</p>
+      <p class="desc">Source: <code>docs/results/rl_fairness.md</code>, 2026-09-13.
+        Five training seeds, hold-out regimes, symmetric information, fees and queue model enabled, paired confidence intervals.</p>
     </div>
+  </section>
+
+  <section class="section" aria-labelledby="execution-heading">
+    <h3 id="execution-heading">Execution telemetry unavailable</h3>
+    <p class="desc">This static page has no agent-fill feed. For the execution timeline and inventory chart,
+      run <code>python python_quant/scripts/serve_dashboard.py --synthetic</code> and open the server's execution lab.
+      That lab records actual fills from a deterministic seeded <code>OrderBookEnv</code> sell episode,
+      explicitly labeled synthetic execution &mdash; never live shm-ring telemetry or evidence of a strategy edge.</p>
   </section>
 
   <!-- ============ subsystems ============ -->
@@ -425,9 +415,9 @@
           <div class="testrow"><span class="name">Replay <code>test_replay.py</code></span><span class="caret">&#9656;</span><span class="res ok">5 / 5</span>
             <span class="cmd">python -m pytest python_quant/tests/test_replay.py
 &#8594; 5 passed</span></div>
-          <div class="testrow"><span class="name">Headline eval (live)</span><span class="caret">&#9656;</span><span class="res ok">+50.4% vs VWAP</span>
-            <span class="cmd">python python_quant/scripts/train_eval_agent.py --highvol --vol-feature --eval-only python_quant/artifacts/policy_ppo_highvol.npz
-&#8594; ppo 1.401 vs vwap 2.827 bps = +50.4% (100 seeded episodes)</span></div>
+          <div class="testrow"><span class="name">Fair RL re-verification (2026-09-13)</span><span class="caret">&#9656;</span><span class="res warn">headline retired</span>
+            <span class="cmd">python python_quant/scripts/rl_fairness_study.py
+&#8594; docs/results/rl_fairness.md: broad edge not reproduced; significant edge only under liquidity shocks</span></div>
         </div>
       </div>
     </article>
@@ -572,79 +562,20 @@
         <span class="ln cmdline"><span class="c">g++ -std=c++20 -O3 -I cpp_engine/include -I cuda_risk cuda_risk/risk_bench.cpp -o risk_bench.exe &amp;&amp; ./risk_bench.exe</span></span>
         <span class="ln dim">&#8594; CPU: var=0.324574 cvar=0.389231, 915.0 ms (55M path-steps/s)</span>
         <span class="ln warn">&#8594; GPU: not compiled (no CUDA toolkit) — speedup measured on a CUDA box</span>
-        <span class="ln cmdline"><span class="c">python python_quant/scripts/train_eval_agent.py --highvol --vol-feature --eval-only python_quant/artifacts/policy_ppo_highvol.npz</span></span>
-        <span class="ln ok">&#8594; agent shortfall 1.401 bps vs VWAP 2.827 bps = +50.4%</span>
+        <span class="ln cmdline"><span class="c">python python_quant/scripts/rl_fairness_study.py</span></span>
+        <span class="ln warn">&#8594; committed study (2026-09-13): broad headline retired; significant edge only under liquidity shocks</span>
       </div>
     </div>
   </section>
 
   <footer>
-    <span>NEXUS-LOB &middot; verification console &middot; all numbers measured live 2026-09-09</span>
+    <span>NEXUS-LOB &middot; historical systems console &middot; fair-study reference 2026-09-13</span>
     <span>CUDA needs WSL/Linux or a Windows CUDA toolkit</span>
   </footer>
 
 </div>
 
-<div class="tooltip" id="tip"></div>
-
 <script>
-  /* ---------- chart ---------- */
-  (function(){
-    var data=[
-      {name:'PPO',    val:1.401, vs:'+50.4%', rw:-5.04, left:'26.3', hero:true},
-      {name:'POV',    val:2.519, vs:'+10.9%', rw:-9.32, left:'45.0'},
-      {name:'TWAP',   val:2.659, vs:'+5.9%',  rw:-8.60, left:'39.6'},
-      {name:'Passive',val:2.679, vs:'+5.3%',  rw:-12.81,left:'287.8'},
-      {name:'VWAP',   val:2.827, vs:'0.0%',   rw:-7.40, left:'24.3', ref:true}
-    ];
-    var W=760,H=320, ML=64, MR=150, MT=8, MB=40;
-    var pw=W-ML-MR, ph=H-MT-MB, max=3.0;
-    var x=function(v){return ML+v/max*pw;};
-    var rowH=ph/data.length, bh=Math.min(26,rowH-16);
-    var ns='http://www.w3.org/2000/svg';
-    var svg=document.getElementById('chart');
-    var g='';
-    // gridlines
-    [1,2,3].forEach(function(t){
-      g+='<g class="grid"><line x1="'+x(t)+'" y1="'+MT+'" x2="'+x(t)+'" y2="'+(MT+ph)+'"/></g>';
-      g+='<g class="axis"><text x="'+x(t)+'" y="'+(MT+ph+18)+'" text-anchor="middle">'+t+'.0</text></g>';
-    });
-    g+='<text x="'+ML+'" y="'+(MT+ph+18)+'" text-anchor="middle" class="axis" style="font-size:11px">0</text>';
-    // VWAP reference line
-    var ref=data[4];
-    g+='<line class="vref" x1="'+x(ref.val)+'" y1="'+MT+'" x2="'+x(ref.val)+'" y2="'+(MT+ph)+'"/>';
-    g+='<text class="vlabel" x="'+(x(ref.val)+7)+'" y="'+(MT+14)+'">VWAP baseline 2.827</text>';
-    // bars
-    data.forEach(function(d,i){
-      var y=MT+i*rowH, h=bh;
-      var cls=d.hero?'bar-hero':(d.ref?'bar-vwap':'bar-field');
-      g+='<rect class="'+cls+'" data-i="'+i+'" x="'+ML+'" y="'+(y+rowH/2-h/2)+'" width="'+(x(d.val)-ML)+'" height="'+h+'" rx="4" ry="4"/>';
-      // label
-      var lc=d.hero?'blabel-hero':'blabel';
-      g+='<text class="'+lc+'" x="'+(x(d.val)+8)+'" y="'+(y+rowH/2+4)+'">'+d.val.toFixed(3)+' bps</text>';
-      g+='<text class="'+(d.hero?'rowlabel-hero':'rowlabel')+'" x="'+(ML-10)+'" y="'+(y+rowH/2+4)+'" text-anchor="end">'+d.name+'</text>';
-    });
-    svg.innerHTML=g;
-    // tooltip
-    var tip=document.getElementById('tip');
-    var bars=svg.querySelectorAll('rect[data-i]');
-    Array.prototype.forEach.call(bars,function(r){
-      var d=data[+r.getAttribute('data-i')];
-      r.addEventListener('mousemove',function(e){
-        var rect=svg.getBoundingClientRect();
-        tip.innerHTML='<b>'+d.name+'</b>'+
-          '<span class="tt">shortfall <span>'+d.val.toFixed(3)+' bps</span></span>'+
-          '<span class="tt">vs VWAP <span>'+d.vs+'</span></span>'+
-          '<span class="tt">reward <span>'+d.rw+'</span></span>'+
-          '<span class="tt">leftover <span>'+d.left+'</span></span>';
-        tip.style.opacity=1;
-        var tx=e.clientX-rect.left+14, ty=e.clientY-rect.top-10;
-        tip.style.left=tx+'px'; tip.style.top=ty+'px';
-      });
-      r.addEventListener('mouseleave',function(){tip.style.opacity=0;});
-    });
-  })();
-
   /* ---------- filters ---------- */
   (function(){
     var chips=document.querySelectorAll('#filters .fchip');
