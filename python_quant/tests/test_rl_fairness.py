@@ -158,6 +158,34 @@ class _Const:
         return self.a
 
 
+class _PartialFirstLossEnv:
+    """One deterministic E7 episode with an unfilled residual."""
+
+    inventory0 = 100
+    arrival_mid = 100
+
+    def reset(self, *, seed: int | None = None):
+        del seed
+        self.inventory = self.inventory0
+        self.fills: list[tuple[int, int, int]] = []
+        self.t = 0
+        return np.zeros(1, dtype=np.float64), {"arrival_mid": self.arrival_mid}
+
+    def mark_to_market(self) -> float:
+        return 0.0
+
+    def step(self, action: float):
+        del action
+        self.t = 1
+        self.inventory = 60
+        self.fills = [(1, 95, 40)]
+        return np.zeros(1, dtype=np.float64), -1.0, False, True, {
+            "shortfall_bps": 500.0,
+            "market_vwap": 100.0,
+            "pnl_ticks": -500.0,
+        }
+
+
 def test_run_regime_episodes_identical_tapes_and_row_schema():
     fs = regime_factories(("calm",))
     eps = run_regime_episodes(_Const(0.1), fs, seeds=2, episodes_per_seed=3, baselines=("twap",), agent_name="agent")
@@ -165,13 +193,27 @@ def test_run_regime_episodes_identical_tapes_and_row_schema():
     assert len(rows_a) == len(rows_b) == 6
     assert [r["seed"] for r in rows_a] == [r["seed"] for r in rows_b]
     assert [r["seed_family"] for r in rows_a] == [0, 0, 0, 1, 1, 1]
-    assert {"seed", "reward", "shortfall_bps", "is_bps", "vwap_slip_bps", "leftover", "completion", "seed_family"} <= set(rows_a[0])
+    assert {
+        "seed", "reward", "shortfall_bps", "is_bps", "vwap_slip_bps", "leftover",
+        "completion", "fill_rate", "mdd_ticks", "seed_family",
+    } <= set(rows_a[0])
     # is_bps (execution.metrics) and the env's shortfall_bps are the same number
     for r in rows_a + rows_b:
         assert r["is_bps"] == pytest.approx(r["shortfall_bps"], abs=1e-9)
         assert 0.0 <= r["completion"] <= 1.0
     with pytest.raises(ValueError):
         run_regime_episodes(None, fs, seeds=1, episodes_per_seed=1)
+
+
+def test_e7_row_captures_partial_fill_and_first_step_drawdown() -> None:
+    episodes = run_regime_episodes(
+        _Const(0.0), {"partial": _PartialFirstLossEnv}, seeds=1, episodes_per_seed=1, agent_name="agent"
+    )
+    row = episodes["partial"]["agent"][0]
+    assert row["fill_rate"] == pytest.approx(0.4)
+    assert row["completion"] == pytest.approx(0.4)
+    # Reset PnL=0 is deliberately part of the path before the -500 first mark.
+    assert row["mdd_ticks"] == pytest.approx(500.0)
 
 
 def test_ci_from_rows_block_bootstrap_and_regime_table():

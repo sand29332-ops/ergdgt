@@ -133,6 +133,13 @@ fill ledger, and unavailable/error states are implemented; both dashboard pages
 retire the unfair PPO headline. Verified **232 pytest passes / 1 optional tape
 skip**, lint, real-browser execution/retry, and a 390px layout without overflow.
 
+**Person B E7 milestone, 2026-09-14:** same-rollout fill rate and reset-inclusive
+gross MTM drawdown now appear with CIs for PPO and every baseline. The full
+600-iteration, five-training-seed study was rerun (1,053 s); 39 focused tests
+and report-schema/CI checks pass. No consistent high-vol edge emerged;
+liquidity-shock significance is 5/5 `novol`, 4/5 `volsym`. Expanded tape
+validation and history-fitted VWAP are being completed in this takeover.
+
 **Phase 1 — C++ matching engine implemented & tested; pybind `Engine` wired to it.**
 
 | Component | File | State |
@@ -296,8 +303,9 @@ This is the Person A ↔ Person B integration seam.
 
 ## 7. Next steps (ordered; low-risk foundations first)
 
-**Active Person B milestones (2026-09-14):** broaden real-tape validation; add E7
-fill-rate and drawdown reporting; implement a history-fitted VWAP volume curve.
+**Active Person B milestones (2026-09-14):** broaden real-tape validation;
+implement a history-fitted VWAP volume curve. E7 fill-rate/drawdown reporting
+and its full five-seed rerun are complete.
 The execution dashboard is complete. The import/setup milestone passed
 Linux/Windows CI; each subsequent milestone is checked and published separately.
 The original checklist below is retained as project history.

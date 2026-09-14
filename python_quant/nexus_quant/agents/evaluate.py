@@ -189,18 +189,28 @@ def _episode_rows(
     seeds: Sequence[int],
 ) -> list[dict]:
     """Full episodes for every seed; one row per episode with the honest metric set."""
-    from ..execution.metrics import implementation_shortfall, vwap_slippage
+    from ..execution.metrics import (
+        completion_rate,
+        fill_rate,
+        implementation_shortfall,
+        max_drawdown,
+        vwap_slippage,
+    )
 
     rows: list[dict] = []
     for sd in seeds:
         obs, _ = env.reset(seed=int(sd))
         obs = np.asarray(obs, dtype=np.float64)
         total = 0.0
+        # The reset mark is the zero-PnL arrival reference. Keep it in the
+        # path so a loss on the first execution step is a real drawdown.
+        mtm_path = [float(env.mark_to_market())]
         while True:
             a = act_fn(env, obs)
             obs, r, term, trunc, info = env.step(a)
             obs = np.asarray(obs, dtype=np.float64)
             total += float(r)
+            mtm_path.append(float(info["pnl_ticks"]))
             if term or trunc:
                 break
         market_vwap = float(info.get("market_vwap", 0.0) or 0.0)
@@ -212,7 +222,9 @@ def _episode_rows(
                 "is_bps": implementation_shortfall(env.fills, env.arrival_mid, side=1),
                 "vwap_slip_bps": vwap_slippage(env.fills, market_vwap, side=1),
                 "leftover": int(env.inventory),
-                "completion": 1.0 - env.inventory / max(1, env.inventory0),
+                "completion": completion_rate(env.fills, env.inventory0, env.inventory),
+                "fill_rate": fill_rate(env.fills, env.inventory0),
+                "mdd_ticks": max_drawdown(mtm_path),
             }
         )
     return rows
@@ -246,7 +258,10 @@ def run_regime_episodes(
     the same tapes, so a difference between two strategies is never a
     difference in the flow. Returns ``{regime: {strategy: [row, ...]}}`` with
     one row per episode (``seed, reward, shortfall_bps, is_bps, vwap_slip_bps,
-    leftover, completion``), ordered by seed family then episode.
+    leftover, completion, fill_rate, mdd_ticks``), ordered by seed family then
+    episode. ``mdd_ticks`` is gross mark-to-market peak-to-trough drawdown in
+    price-tick × share units; its path includes the reset mark and excludes
+    fee/rebate/impact terms, which are reflected in ``reward`` instead.
     """
     strategies: list[tuple[str, Callable[[OrderBookEnv, np.ndarray], float]]] = []
     if policy is not None:
@@ -323,7 +338,8 @@ def evaluate_regime_ci(
 
     ``metric`` is one of ``shortfall_bps`` (vs arrival, positive = cost),
     ``is_bps`` (same math via ``execution.metrics``), ``vwap_slip_bps`` (vs
-    **market** VWAP), ``reward``, ``leftover``, ``completion``.
+    **market** VWAP), ``reward``, ``leftover``, ``completion``, ``fill_rate``,
+    ``mdd_ticks``. MDD is gross mark-to-market in price-tick × share units.
     """
     episodes = run_regime_episodes(
         policy, regimes, seeds=seeds, episodes_per_seed=episodes_per_seed, seed0=seed0,

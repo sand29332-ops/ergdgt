@@ -168,6 +168,11 @@ the economically relevant part.
 
 ## 7. E7 — execution: fair RL re-verification (`docs/results/rl_fairness.md`)
 
+**Full rerun, 2026-09-14:** 600 iterations per policy, five training seeds,
+five evaluation families × 20 episodes, and 2,000 bootstrap replicates.
+Policies were retrained, not inferred from the historical report. The cache
+now requires matching training configuration and embedded provenance.
+
 Setup (plan_2.md §6, all six items): PPO trained **only** on the `highvol`
 regime; evaluated on `highvol` + five hold-outs (`calm`, `lowvol`,
 `highvol_null` — the random-walk null arm with symmetric gaps, `trending`,
@@ -187,6 +192,21 @@ curve with catch-up), `adaptive_pov`, `is_aware` beside the legacy
 | calm | 1.61 ± 0.02 | twap 1.47 | **0 / 5** (PPO worse, −0.12 … −0.16) |
 | lowvol | 0.96 ± 0.01 | adaptive_pov 0.90 | **0 / 5** (PPO worse, −0.05 … −0.08) |
 | liquidity_shock | 3.05 ± 0.31 | adaptive_pov 3.74 | **5 / 0** (PPO better, +0.40 … +1.10) |
+
+The fresh `volsym` arm is less stable: high-vol has one significantly better
+and one significantly worse seed; liquidity shock has four significantly
+better seeds out of five. One null-arm seed is also significant. These
+isolated seed outcomes do not establish a consistent high-vol advantage.
+
+Both information modes now report **fill rate and maximum drawdown for every
+strategy**, derived from the same episodes as slippage. Drawdown includes
+the reset mark, so a first-step loss is counted. Its unit is gross
+**price-tick × shares**, not a capital-normalized percentage; costs remain
+in reward. For example, `novol` PPO under liquidity shocks fills **94.2%
+[92.7%, 95.3%]** and has mean MDD **11,885 [11,300, 12,445] tick-shares**.
+PPO aggregate CIs resample training-seed means on the fixed evaluation panel;
+per-policy and baseline CIs resample evaluation episodes in blocks. See the
+full tables and per-seed values in `docs/results/rl_fairness.{md,json}`.
 
 The `volsym` mode gives the same picture (1/5 better and 1/5 worse on highvol,
 4/5 better on liquidity_shock, 5/5 worse on calm/lowvol).

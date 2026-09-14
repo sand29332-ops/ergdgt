@@ -1,5 +1,20 @@
 # Person B Handoff: Python Quantitative Layer
 
+## Current copy — 2026-09-14 takeover
+
+- Repository: `sand29332-ops/ergdgt`; the imported dashboard milestone is intact.
+- **E7 reporting complete:** fill-rate and reset-inclusive gross MTM drawdown
+  CIs for all strategies, using the same seeded rollouts as slippage. Backtest
+  summaries now retain MDD; policy caches reject a mismatched training config.
+- Full rerun: 600 iterations × 16 episodes, five training seeds, five evaluation
+  families × 20 episodes, two information modes, six regimes, 2,000 bootstraps.
+  Fresh artifacts: `docs/results/rl_fairness.{json,md}`. 39 focused tests pass.
+- The unfair headline remains retired. Liquidity-shock significance is 5/5
+  `novol`, 4/5 `volsym`; high-vol performance is not consistently better.
+- Next: finish the expanded real-tape matrix and history-fitted VWAP milestone.
+
+The dated sections below preserve the original repository's historical handoff.
+
 **Updated:** 2026-09-04
 **Checkout:** `C:\Users\Shrikar\nexus\parent-transfer`
 **Branch:** `main` at `d40bf59` (tracking `origin/main`)
